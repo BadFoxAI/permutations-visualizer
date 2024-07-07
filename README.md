@@ -8,7 +8,7 @@ This project provides a visual representation of permutations based on user-defi
 
 ## Features
 
-- Adjustable number of places (1-16)
+- Adjustable number of places (1-64)
 - Customizable color palette (up to 10 colors)
 - Three display modes: Binary, Decimal, and Visual
 - Adjustable items per page (10-256)
@@ -19,7 +19,7 @@ This project provides a visual representation of permutations based on user-defi
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/permutations-visualizer.git
+   git clone https://github.com/BadFoxAI/permutations-visualizer.git
    ```
 2. Open `index.html` in a web browser.
 
@@ -39,10 +39,6 @@ No additional installation or dependencies are required as this is a standalone 
 ## Contributing
 
 Contributions to improve the Permutations Visualizer are welcome. Please feel free to submit a Pull Request.
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
