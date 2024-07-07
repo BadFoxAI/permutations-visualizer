@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimized Permutations Visualizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            height: calc(100vh - 20px);
+        }
+        .controls {
+            width: 250px;
+            padding-right: 10px;
+            overflow-y: auto;
+        }
+        .visualization, .info-display {
+            flex-grow: 1;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            overflow: auto;
+            padding: 15px;
+        }
+        .row {
+            display: flex;
+            line-height: 0;
+        }
+        .cell {
+            display: inline-block;
+            box-sizing: border-box;
+        }
+        label, button {
+            font-size: 12px;
+        }
+        input[type="color"] {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: none;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        .warning {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .info {
+            font-size: 14px;
+            margin-top: 5px;
+            color: #333;
+        }
+        .stat {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <h3>Optimized Permutations Visualizer</h3>
+            <div>
+                <label for="places">Places: <span id="placesValue">4</span></label>
+                <input type="range" id="places" min="1" max="64" value="4">
+            </div>
+            <div>
+                <label for="itemsPerPage">Items per page: <span id="itemsPerPageValue">100</span></label>
+                <input type="range" id="itemsPerPage" min="10" max="512" value="100">
+            </div>
+            <div>
+                <label for="displayMode">Display Mode:</label>
+                <select id="displayMode">
+                    <option value="binary">Binary</option>
+                    <option value="decimal">Decimal</option>
+                    <option value="visual">Visual</option>
+                </select>
+            </div>
+            <div id="colorInputs"></div>
+            <button id="addColor">Add Color</button>
+            <button id="removeColor">Remove Color</button>
+            <button id="randomizeColors">Randomize Colors</button>
+            <div>
+                <label for="cellSize">Cell Size: <span id="cellSizeValue">20</span></label>
+                <input type="range" id="cellSize" min="1" max="64" value="20">
+            </div>
+            <div>
+                <button id="prevPage">Previous</button>
+                <span id="pageInfo">Page 1 of 1</span>
+                <button id="nextPage">Next</button>
+            </div>
+            <div id="warningMessage" class="warning"></div>
+            <div id="infoMessage" class="info"></div>
+        </div>
+        <div id="mainDisplay"></div>
+    </div>
+
+    <script>
+        // Constants
+        const VISUALIZATION_LIMIT = 1000000; // 1 million permutations
+        const MAX_PLACES = 64;
+        const MAX_ITEMS_PER_PAGE = 512;
+
+        // Function to generate all permutations for given number of places and base
+        const generatePermutations = (n, base) => {
+            const total = BigInt(base) ** BigInt(n);
+            const result = [];
+            for (let i = 0n; i < total && i < BigInt(VISUALIZATION_LIMIT); i++) {
+                result.push(i.toString(base).padStart(n, '0'));
+            }
+            return result;
+        };
+
+        // Initialize variables
+        let places = 4;
+        let itemsPerPage = 100;
+        let displayMode = 'binary';
+        let colors = ['#FFFFFF', '#000000'];
+        let cellSize = 20;
+        let currentPage = 1;
+        let permutations = [];
+
+        // Function to update the visualization based on current settings
+        const updateVisualization = () => {
+            const mainDisplayEl = document.getElementById('mainDisplay');
+            mainDisplayEl.innerHTML = '';
+            mainDisplayEl.className = 'visualization';
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, permutations.length);
+            
+            for (let i = startIndex; i < endIndex; i++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'row';
+                
+                const perm = permutations[i];
+                for (let j = 0; j < perm.length; j++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.className = 'cell';
+                    cellEl.style.backgroundColor = colors[parseInt(perm[j], colors.length)];
+                    cellEl.style.width = `${cellSize}px`;
+                    cellEl.style.height = `${cellSize}px`;
+                    
+                    if (displayMode !== 'visual' && cellSize >= 16) {
+                        cellEl.textContent = perm[j];
+                        cellEl.style.color = colors[(parseInt(perm[j], colors.length) + 1) % colors.length];
+                        cellEl.style.lineHeight = `${cellSize}px`;
+                        cellEl.style.textAlign = 'center';
+                        cellEl.style.fontSize = `${Math.max(8, cellSize / 2)}px`;
+                    }
+                    
+                    rowEl.appendChild(cellEl);
+                }
+                
+                if (displayMode === 'decimal' && cellSize >= 16) {
+                    const decimalEl = document.createElement('div');
+                    decimalEl.textContent = BigInt(`0b${perm}`).toString(colors.length);
+                    decimalEl.style.marginLeft = '10px';
+                    decimalEl.style.lineHeight = `${cellSize}px`;
+                    rowEl.appendChild(decimalEl);
+                }
+                
+                mainDisplayEl.appendChild(rowEl);
+            }
+
+            document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${Math.ceil(permutations.length / itemsPerPage)}`;
+        };
+
+        // Function to display information for large permutation sets
+        const displayInfo = (totalPermutations) => {
+            const mainDisplayEl = document.getElementById('mainDisplay');
+            mainDisplayEl.innerHTML = '';
+            mainDisplayEl.className = 'info-display';
+
+            const infoHtml = `
+                <h2>Permutation Set Information</h2>
+                <div class="stat">Total Permutations: ${totalPermutations.toLocaleString()}</div>
+                <div class="stat">Number of Places: ${places}</div>
+                <div class="stat">Base (Number of Colors): ${colors.length}</div>
+                <div class="stat">Bits Required: ${Math.ceil(Math.log2(Number(totalPermutations)))}</div>
+                <div class="stat">Decimal Digits: ${totalPermutations.toString().length}</div>
+                <div class="stat">Example Permutations:</div>
+                <ul>
+                    ${permutations.slice(0, 5).map(perm => `<li>${perm}</li>`).join('')}
+                    ${totalPermutations > 5n ? '<li>...</li>' : ''}
+                    ${totalPermutations > 5n ? `<li>${permutations[permutations.length - 1]}</li>` : ''}
+                </ul>
+            `;
+
+            mainDisplayEl.innerHTML = infoHtml;
+        };
+
+        // Function to regenerate permutations and update display
+        const updatePermutations = () => {
+            const totalPermutations = BigInt(colors.length) ** BigInt(places);
+            
+            // Show warning for large permutation sets
+            if (totalPermutations > BigInt(VISUALIZATION_LIMIT)) {
+                document.getElementById('warningMessage').textContent = 'Large permutation set: Switching to info mode.';
+            } else {
+                document.getElementById('warningMessage').textContent = '';
+            }
+
+            // Generate permutations
+            permutations = generatePermutations(places, colors.length);
+            currentPage = 1;
+
+            // Update info message
+            document.getElementById('infoMessage').textContent = `Total permutations: ${totalPermutations.toLocaleString()}`;
+
+            // Switch between visualization and info display
+            if (totalPermutations > BigInt(VISUALIZATION_LIMIT)) {
+                displayInfo(totalPermutations);
+            } else {
+                updateVisualization();
+            }
+        };
+
+        // Function to update color input elements
+        const updateColorInputs = () => {
+            const colorInputsEl = document.getElementById('colorInputs');
+            colorInputsEl.innerHTML = '';
+            colors.forEach((color, index) => {
+                const input = document.createElement('input');
+                input.type = 'color';
+                input.value = color;
+                input.addEventListener('change', (e) => {
+                    colors[index] = e.target.value;
+                    updatePermutations();
+                });
+                colorInputsEl.appendChild(input);
+            });
+        };
+
+        // Event listeners for controls
+        document.getElementById('places').addEventListener('input', (e) => {
+            places = parseInt(e.target.value);
+            document.getElementById('placesValue').textContent = places;
+            updatePermutations();
+        });
+
+        document.getElementById('itemsPerPage').addEventListener('input', (e) => {
+            itemsPerPage = parseInt(e.target.value);
+            document.getElementById('itemsPerPageValue').textContent = itemsPerPage;
+            if (permutations.length <= VISUALIZATION_LIMIT) {
+                updateVisualization();
+            }
+        });
+
+        document.getElementById('displayMode').addEventListener('change', (e) => {
+            displayMode = e.target.value;
+            if (permutations.length <= VISUALIZATION_LIMIT) {
+                updateVisualization();
+            }
+        });
+
+        document.getElementById('cellSize').addEventListener('input', (e) => {
+            cellSize = parseInt(e.target.value);
+            document.getElementById('cellSizeValue').textContent = cellSize;
+            if (permutations.length <= VISUALIZATION_LIMIT) {
+                updateVisualization();
+            }
+        });
+
+        document.getElementById('addColor').addEventListener('click', () => {
+            if (colors.length < 10) {
+                colors.push(`#${Math.floor(Math.random()*16777215).toString(16)}`);
+                updateColorInputs();
+                updatePermutations();
+            }
+        });
+
+        document.getElementById('removeColor').addEventListener('click', () => {
+            if (colors.length > 2) {
+                colors.pop();
+                updateColorInputs();
+                updatePermutations();
+            }
+        });
+
+        document.getElementById('randomizeColors').addEventListener('click', () => {
+            colors = colors.map(() => `#${Math.floor(Math.random()*16777215).toString(16)}`);
+            updateColorInputs();
+            updatePermutations();
+        });
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1 && permutations.length <= VISUALIZATION_LIMIT) {
+                currentPage--;
+                updateVisualization();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage < Math.ceil(permutations.length / itemsPerPage) && permutations.length <= VISUALIZATION_LIMIT) {
+                currentPage++;
+                updateVisualization();
+            }
+        });
+
+        // Initialize the application
+        updateColorInputs();
+        updatePermutations();
+    </script>
+</body>
+</html>
